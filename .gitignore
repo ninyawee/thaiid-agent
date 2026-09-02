@@ -1,0 +1,10 @@
+build/
+dist/
+out/
+*.spec.bak
+__pycache__/
+*.pyc
+.venv/
+# a card read must never land in the repo
+*.jpg
+*.jpeg

@@ -1,0 +1,40 @@
+# Linux — systemd USER unit (not system-wide: it serves one logged-in person,
+# and needs their session to reach the reader).
+#
+#   mkdir -p ~/.local/bin ~/.config/systemd/user
+#   cp thaiid-agent ~/.local/bin/
+#   cp packaging/thaiid-agent.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now thaiid-agent
+#
+# Logs: journalctl --user -u thaiid-agent -f
+[Unit]
+Description=Thai ID card reader agent
+Documentation=https://github.com/ninyawee/thaiid-agent
+After=pcscd.socket
+Wants=pcscd.socket
+
+[Service]
+ExecStart=%h/.local/bin/thaiid-agent
+Restart=on-failure
+RestartSec=3
+
+# Only needed if you point a page you host yourself at the agent. The built-in
+# page on http://127.0.0.1:8765 is same-origin and always allowed.
+# Environment=THAIID_ORIGINS=https://cards.example.org
+
+# It reads national ID cards, so give it no more than it needs. Deliberately
+# NOT ProtectSystem=strict or ProtectHome: the first makes /run/pcscd read-only
+# and breaks the reader socket, the second blocks the dependency cache when
+# running from source. Both fail at runtime rather than at load, so they look
+# fine right up until a card is inserted.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# AF_UNIX is required — that is how pcsclite reaches pcscd.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS — LaunchAgent (per-user, not a system daemon: it serves the logged-in
+  person and needs their session to reach the reader).
+
+    mkdir -p ~/bin ~/Library/LaunchAgents
+    cp thaiid-agent ~/bin/
+    xattr -d com.apple.quarantine ~/bin/thaiid-agent   # binaries are unsigned
+    sed "s|__HOME__|$HOME|g" packaging/org.thaiid.agent.plist \
+      > ~/Library/LaunchAgents/org.thaiid.agent.plist
+    launchctl load ~/Library/LaunchAgents/org.thaiid.agent.plist
+
+  Logs: tail -f /tmp/thaiid-agent.log
+  Stop: launchctl unload ~/Library/LaunchAgents/org.thaiid.agent.plist
+
+  PC/SC is built into macOS, so there is nothing else to install.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>org.thaiid.agent</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/bin/thaiid-agent</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <!-- Only needed if you point a page you host yourself at the agent. The
+       built-in page on http://127.0.0.1:8765 is same-origin and always allowed.
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>THAIID_ORIGINS</key>
+    <string>https://cards.example.org</string>
+  </dict>
+  -->
+
+  <key>StandardOutPath</key>
+  <string>/tmp/thaiid-agent.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/thaiid-agent.log</string>
+</dict>
+</plist>

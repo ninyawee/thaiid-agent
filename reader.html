@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>อ่านบัตรประชาชน</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trirong:wght@600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ink:#16203a; --ink-soft:#4d5872; --ink-mute:#7b8499;
+    --paper:#fbfaf8; --surface:#fff; --sunk:#f2f0ec;
+    --line:#e2ded6; --line-soft:#eeebe4;
+    --accent:#27406e; --accent-dim:#e4e8f0;
+    --gold:#9a6f33; --gold-bg:#faf3e8;
+    --ok:#3f6b4a; --ok-bg:#eaf2ec;
+    --no:#a33a2b; --no-bg:#faece9;
+    --blank:#8d95a6;
+    --f:'IBM Plex Sans Thai','Noto Sans Thai',system-ui,sans-serif;
+    --fd:'Trirong','Noto Serif Thai',Georgia,serif;
+    --fm:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ink:#e8eaf1; --ink-soft:#a9b2c5; --ink-mute:#828b9f;
+    --paper:#121723; --surface:#1a2130; --sunk:#161d2a;
+    --line:#2b3345; --line-soft:#222939;
+    --accent:#87a2d4; --accent-dim:#222d43;
+    --gold:#c6a970; --gold-bg:#241f16;
+    --ok:#8cba99; --ok-bg:#16241b;
+    --no:#e08877; --no-bg:#2a1a17;
+  }}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);font-size:14.5px;line-height:1.58;}
+  .wrap{max-width:640px;margin:0 auto;padding:16px;}
+
+  .bar{display:flex;gap:9px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);}
+  .led{width:9px;height:9px;border-radius:50%;background:var(--blank);flex:none;}
+  .led.on{background:var(--ok);} .led.card{background:var(--gold);} .led.err{background:var(--no);}
+  .bar span{font-size:12.5px;color:var(--ink-mute);}
+
+  button{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    font-family:var(--f);font-size:15px;font-weight:600;padding:10px 18px;border-radius:7px;cursor:pointer;}
+  button.ghost{background:none;color:var(--accent);}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  .acts{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px;}
+  .acts button{flex:1;min-width:150px;}
+
+  .msg{padding:26px 8px;text-align:center;color:var(--ink-mute);}
+  .msg b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px;font-family:var(--fd);}
+  code{font-family:var(--fm);font-size:12.5px;background:var(--sunk);padding:2px 7px;border-radius:4px;
+       display:inline-block;margin-top:8px;color:var(--ink-soft);}
+
+  label.fld{display:block;margin-top:14px;font-size:12.5px;color:var(--ink-mute);}
+  label.fld input{display:block;width:100%;margin-top:4px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface);color:var(--ink);font-family:var(--f);font-size:14.5px;}
+
+  /* ---- the certified copy sheet: the only thing that prints ---- */
+  .sheet{background:#fff;color:#111;margin-top:16px;padding:22px 24px;border:1px solid var(--line);
+         border-radius:8px;position:relative;overflow:hidden;}
+  .sheet h1{font-family:var(--fd);font-size:19px;font-weight:700;margin:0 0 3px;letter-spacing:.01em;}
+  .sheet .sub{font-size:11.5px;color:#666;margin-bottom:14px;}
+  .sheet .body{display:flex;gap:18px;align-items:flex-start;}
+  .sheet img{width:100px;height:126px;object-fit:cover;border:1px solid #ccc;background:#eee;flex:none;}
+  .sheet dl{margin:0;flex:1;display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13.5px;}
+  .sheet dt{color:#555;white-space:nowrap;}
+  .sheet dd{margin:0;font-weight:600;}
+  .sheet dd.mono{font-family:var(--fm);letter-spacing:.06em;}
+
+  .purpose{margin-top:14px;padding:8px 12px;border:1px dashed #999;font-size:13px;color:#333;}
+  label.chk{display:flex;gap:7px;align-items:flex-start;margin-top:12px;
+            font-size:12.5px;color:var(--ink-mute);cursor:pointer;line-height:1.45;}
+  label.chk input{accent-color:var(--accent);margin:3px 0 0;flex:none;}
+  .readout{margin-top:12px;font-size:12.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px;}
+  .readout .mono{font-family:var(--fm);letter-spacing:.05em;color:var(--ink);}
+  .readout .miss{color:var(--gold);}
+  .sign{margin-top:22px;font-size:13px;color:#222;}
+  .sign .line{margin-top:26px;display:flex;gap:30px;flex-wrap:wrap;}
+  .sign .line div{flex:1;min-width:190px;border-top:1px dotted #666;padding-top:5px;font-size:11.5px;color:#555;text-align:center;}
+  .foot{margin-top:16px;font-size:10px;color:#888;line-height:1.5;}
+
+  /* The purpose written across the copy — standard practice so a stray sheet
+     cannot be reused for something else. */
+  .mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+        pointer-events:none;transform:rotate(-24deg);}
+  /* Light enough that the address underneath stays readable — this sheet gets
+     signed, so legibility beats the watermark. */
+  .mark span{font-size:26px;font-weight:700;color:rgba(0,0,0,.045);white-space:nowrap;letter-spacing:.08em;}
+
+  @media print{
+    @page{size:A4;margin:16mm;}
+    body{background:#fff;}
+    .wrap{max-width:none;padding:0;}
+    .noprint{display:none !important;}
+    .sheet{border:0;border-radius:0;margin:0;padding:0;}
+    .sheet img{width:29mm;height:36mm;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar noprint">
+    <span class="led" id="led"></span><span id="conn">ยังไม่ได้ต่อเครื่องอ่าน</span>
+  </div>
+  <div id="main"></div>
+</div>
+
+<script>
+"use strict";
+
+const AGENT = 'ws://127.0.0.1:8765';
+let WS = null, PENDING = false, CARD = null, READING = false, SENT = '';
+// สปสช. entitlement is health data (PDPA s.26). Read by default because that is
+// what this tool is for, but visible and switchable per person rather than
+// silently collected.
+let WANT_NHSO = true;
+// The laser number and the health entitlement are never printed. This sheet
+// stands in for a photocopy, and a photocopy of the front of the card shows
+// neither — printing them would make the replacement more dangerous than the
+// thing it replaces. They are read and stored; they just do not go on paper.
+
+const $ = (id) => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const setConn = (cls, t) => { $('led').className = 'led ' + cls; $('conn').textContent = t; };
+
+const THAI_MONTH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+/** ISO date -> Thai Buddhist-era display, which is what a Thai document expects. */
+function thaiDate(iso){
+  if (!iso) return '—';
+  const [y, m, d] = String(iso).split('-').map(Number);
+  if (!y || !m || !d) return String(iso);
+  return `${d} ${THAI_MONTH[m - 1]} ${y + 543}`;
+}
+
+function connect(){
+  if (WS || PENDING) return;
+  let ws;
+  try { ws = new WebSocket(AGENT); } catch (e) { return; }
+  PENDING = true; setConn('', 'กำลังเชื่อมต่อ…'); render();
+  const giveUp = setTimeout(() => { PENDING = false; try { ws.close(); } catch(e){} render(); }, 5000);
+  ws.onopen = () => { clearTimeout(giveUp); PENDING = false; WS = ws; setConn('on', 'ต่อเครื่องอ่านแล้ว'); render(); };
+  ws.onclose = () => { clearTimeout(giveUp); PENDING = false; WS = null; setConn('', 'ไม่ได้ต่อเครื่องอ่าน'); render(); };
+  ws.onerror = () => {};
+  ws.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch (err) { return; }
+    if (m.event === 'card'){
+      setConn(m.present ? 'card' : 'on', m.present ? 'เสียบบัตรแล้ว' : 'ต่อเครื่องอ่านแล้ว');
+      if (m.present && !CARD && !READING) read();
+      return;
+    }
+    READING = false;
+    if (m.ok && m.card){ CARD = m.card; SENT = ''; setConn('on', 'อ่านบัตรแล้ว'); }
+    else if (m.ok === false){ setConn('err', errText(m)); }
+    render();
+  };
+}
+function errText(m){
+  const e = m.error || '', d = m.detail || '';
+  if (e === 'NoReaderFoundError') return 'ไม่พบเครื่องอ่าน';
+  if (e === 'NoCardDetectedError' || /0x8010000C|no smart card/i.test(d)) return 'ไม่พบบัตร — เสียบบัตรให้สุด';
+  if (e === 'InvalidCardError') return 'ไม่ใช่บัตรประชาชนไทย';
+  if (e === 'CardConnectionError') return 'ต่อกับบัตรไม่ได้ — ถอดแล้วเสียบใหม่';
+  return 'อ่านไม่สำเร็จ: ' + e;
+}
+function read(){
+  if (!WS) return;
+  READING = true; CARD = null; SENT = ''; setConn('card', 'กำลังอ่านบัตร…'); render();
+  WS.send(JSON.stringify({cmd: 'read', photo: true, laser: true, nhso: WANT_NHSO}));
+}
+
+/** Hand the card to the Grist widget that opened this window. Same origin, so
+ *  this is a plain postMessage — and the widget does the Grist write as the
+ *  logged-in user, which is why no credential lives out here. */
+function sendToOpener(){
+  if (!window.opener) return;
+  window.opener.postMessage({type: 'thaiid-card', card: CARD, purpose: purposeValue()}, location.origin);
+  SENT = 'ส่งเข้า Grist แล้ว';
+  render();
+}
+const purposeValue = () => ($('purpose') && $('purpose').value.trim()) || '';
+
+function render(){
+  const main = $('main');
+
+  if (!WS){
+    main.innerHTML =
+      `<button class="noprint" id="go" ${PENDING ? 'disabled' : ''} style="width:100%;margin-top:16px">` +
+        (PENDING ? 'กำลังเชื่อมต่อ…' : 'เชื่อมต่อเครื่องอ่านบัตร') + `</button>` +
+      '<div class="msg noprint"><b>ต่อเครื่องอ่านก่อน</b>' +
+      'กดปุ่มด้านบน แล้ว Chrome จะถามขออนุญาต <b>เข้าถึงอุปกรณ์ในเครือข่ายภายใน</b> — อนุญาตครั้งเดียวจำไว้ตลอด' +
+      '<code>systemctl --user status thaiid-agent</code></div>';
+    $('go').onclick = connect;
+    return;
+  }
+
+  if (!CARD){
+    main.innerHTML =
+      `<button class="noprint" id="rd" ${READING ? 'disabled' : ''} style="width:100%;margin-top:16px">` +
+        (READING ? 'กำลังอ่าน…' : 'อ่านบัตร') + `</button>` +
+      `<label class="chk noprint"><input type="checkbox" id="nhso" ${WANT_NHSO ? 'checked' : ''}>` +
+        `อ่านสิทธิการรักษา (สปสช.) — เป็นข้อมูลสุขภาพ ต้องได้รับความยินยอมก่อน</label>` +
+      '<div class="msg noprint">เสียบบัตรในเครื่องอ่าน แล้วกดปุ่ม — เสียบแล้วระบบอ่านให้เองด้วย' +
+      '<div style="margin-top:8px">เลขเลเซอร์หลังบัตรจะถูกอ่านด้วยเสมอ ใช้ยืนยันว่าบัตรเป็นของจริง</div></div>';
+    $('rd').onclick = read;
+    $('nhso').onchange = (e) => { WANT_NHSO = e.target.checked; };
+    return;
+  }
+
+  const c = CARD, p = purposeValue();
+  main.innerHTML =
+    `<label class="fld noprint">ใช้สำหรับ (พิมพ์ลงบนสำเนา เพื่อกันเอาไปใช้อย่างอื่น)` +
+      `<input id="purpose" placeholder="เช่น สมัครงานผู้ช่วยงานบ้าน" value="${esc(p)}"></label>` +
+    `<div class="sheet" id="sheet">` +
+      (p ? `<div class="mark"><span>ใช้สำหรับ${esc(p)}เท่านั้น</span></div>` : '') +
+      `<h1>สำเนาบัตรประจำตัวประชาชน</h1>` +
+      `<div class="sub">ข้อมูลอ่านจากชิปในบัตรโดยตรง ไม่ได้ถ่ายสำเนา</div>` +
+      `<div class="body">` +
+        (c.photo ? `<img src="${c.photo}" alt="รูปจากชิปบัตร">` : '') +
+        `<dl>` +
+          `<dt>เลขประจำตัวประชาชน</dt><dd class="mono">${esc(c.cid)}</dd>` +
+          `<dt>ชื่อ-สกุล</dt><dd>${esc(c.thai_fullname)}</dd>` +
+          `<dt>Name</dt><dd>${esc(c.english_fullname)}</dd>` +
+          `<dt>เกิดวันที่</dt><dd>${esc(thaiDate(c.date_of_birth))}</dd>` +
+          `<dt>เพศ</dt><dd>${esc(c.gender)}</dd>` +
+          `<dt>ที่อยู่</dt><dd>${esc(c.address)}</dd>` +
+          `<dt>วันออกบัตร</dt><dd>${esc(thaiDate(c.issue_date))}</dd>` +
+          `<dt>วันหมดอายุ</dt><dd>${esc(thaiDate(c.expire_date))}${c.is_expired ? ' (หมดอายุแล้ว)' : ''}</dd>` +
+        `</dl>` +
+      `</div>` +
+      (p ? `<div class="purpose">สำเนานี้ใช้สำหรับ <b>${esc(p)}</b> เท่านั้น</div>` : '') +
+      `<div class="sign">ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นข้อมูลของข้าพเจ้าและถูกต้องตรงกับบัตรประจำตัวประชาชน` +
+        `<div class="line">` +
+          `<div>ลงชื่อเจ้าของบัตร</div><div>ลงชื่อผู้รับสำเนา</div><div>วันที่</div>` +
+        `</div>` +
+      `</div>` +
+      `<div class="foot">พิมพ์เมื่อ ${esc(new Date().toLocaleString('th-TH'))} · ` +
+        `อ่านจากชิปบัตรด้วยเครื่องอ่าน ไม่ได้ถ่ายเอกสาร จึงไม่มีภาพด้านหลังบัตรและไม่มีข้อมูลอื่นนอกจากที่แสดง</div>` +
+    `</div>` +
+    `<div class="readout noprint">` +
+      (c.laser_id
+        ? `<div>เลขหลังบัตร <span class="mono">${esc(c.laser_id)}</span> — ยืนยันว่าบัตรเป็นของจริง</div>`
+        : `<div class="miss">อ่านเลขเลเซอร์ไม่ได้${c.laser_error ? ' — ' + esc(c.laser_error) : ''}</div>`) +
+      (c.nhso
+        ? `<div>สิทธิ ${esc(c.nhso.main_inscl)} · ${esc(c.nhso.main_hospital)} · ` +
+          `หมดอายุ ${esc(thaiDate(c.nhso.expire_date))}${c.nhso.is_expired ? ' (หมดอายุแล้ว)' : ''}</div>`
+        : (WANT_NHSO ? `<div class="miss">ไม่มีข้อมูลสิทธิรักษาบนบัตรนี้ หรืออ่านไม่ได้</div>` : '')) +
+      `<div>สองอย่างนี้<b>ไม่ถูกพิมพ์ลงสำเนา</b> — สำเนานี้แทนการถ่ายเอกสารหน้าบัตร ` +
+      `ซึ่งไม่มีข้อมูลสองอย่างนี้อยู่แล้ว</div>` +
+    `</div>` +
+    `<div class="acts noprint">` +
+      `<button id="print">พิมพ์สำเนาให้เซ็น</button>` +
+      (window.opener ? `<button class="ghost" id="send">${esc(SENT || 'ส่งเข้า Grist')}</button>` : '') +
+      `<button class="ghost" id="again">อ่านใหม่</button>` +
+    `</div>`;
+
+  $('purpose').oninput = () => {
+    // Re-render only the parts that show the purpose, so the caret is not lost.
+    const mark = document.querySelector('.mark span'), box = document.querySelector('.purpose b');
+    const v = purposeValue();
+    if (mark) mark.textContent = `ใช้สำหรับ${v}เท่านั้น`;
+    if (box) box.textContent = v;
+  };
+  $('print').onclick = () => window.print();
+  $('again').onclick = read;
+  if ($('send')) $('send').onclick = sendToOpener;
+}
+
+render();
+// If a widget opened us for a specific person, it says so and we prefill.
+window.addEventListener('message', (e) => {
+  if (e.origin !== location.origin || !e.data || e.data.type !== 'thaiid-purpose') return;
+  const el = $('purpose');
+  if (el && !el.value) { el.value = e.data.purpose || ''; render(); }
+});
+if (window.opener) window.opener.postMessage({type: 'thaiid-ready'}, location.origin);
+</script>
+</body>
+</html>
