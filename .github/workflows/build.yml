@@ -88,6 +88,26 @@ jobs:
         with:
           files: artifacts/*
           body: |
-            Binaries are unsigned. macOS will need
-            `xattr -d com.apple.quarantine thaiid-agent-macos-*`, and Windows
-            SmartScreen will warn on first run.
+            Download the binary for your platform, run it, open
+            <http://127.0.0.1:8765> and insert a card.
+
+            **Prerequisites** — PC/SC is built into macOS and Windows, so there
+            is nothing to install. On Linux:
+
+            ```sh
+            sudo apt install pcscd libpcsclite1
+            sudo systemctl enable --now pcscd
+            ```
+
+            **The binaries are unsigned**, so each OS objects once:
+
+            - macOS — `xattr -d com.apple.quarantine thaiid-agent-macos-arm64`
+            - Windows — SmartScreen → More info → Run anyway
+            - Linux — `chmod +x thaiid-agent-linux-x86_64`
+
+            **Intel Macs** have no binary here: an Apple Silicon build will not
+            run on Intel, and GitHub's Intel runners are too scarce to depend
+            on. Build from source instead — see the README.
+
+            To start it at login, see `packaging/` — a systemd user unit, a
+            launchd LaunchAgent, and a per-user scheduled task for Windows.
