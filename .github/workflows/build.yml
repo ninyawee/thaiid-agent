@@ -22,8 +22,10 @@ jobs:
             label: linux-x86_64
           - os: macos-latest
             label: macos-arm64
-          - os: macos-13
-            label: macos-x86_64
+          # No macos-13 (Intel) job. Those runners are scarce enough that the
+          # job sat queued for half an hour, and `release` needs this one, so a
+          # job that never gets a runner would block every release rather than
+          # just being slow. Intel Macs: build from source, it is two commands.
           - os: windows-latest
             label: windows-x86_64
 

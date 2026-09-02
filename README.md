@@ -56,8 +56,13 @@ pyinstaller packaging/thaiid-agent.spec
 ./dist/thaiid-agent --selftest
 ```
 
-Build on the OS you are targeting — PyInstaller does not cross-compile. CI does
-all four in a matrix and smoke-tests each one.
+Build on the OS you are targeting — PyInstaller does not cross-compile. CI
+builds Linux, macOS (Apple Silicon) and Windows, and smoke-tests each binary.
+
+**Intel Macs** have no published binary and need this build step: an Apple
+Silicon binary will not run on Intel (Rosetta translates the other way), and
+GitHub's Intel macOS runners are scarce enough that the job blocked releases
+rather than merely being slow.
 
 ## What it reads
 
