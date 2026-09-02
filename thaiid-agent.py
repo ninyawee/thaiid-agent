@@ -281,8 +281,8 @@ def selftest() -> None:
         first_name, last_name = "สมหญิง", "ใจดี"
 
     class A:
-        subdistrict, district, province = "เวียงคำ", "กุมภวาปี", "อุดรธานี"
-        address = "99 หมู่ที่3 ตำบลเวียงคำ อำเภอกุมภวาปี จังหวัดอุดรธานี"
+        subdistrict, district, province = "ในเมือง", "เมือง", "ขอนแก่น"
+        address = "99 หมู่ที่3 ตำบลในเมือง อำเภอเมือง จังหวัดขอนแก่น"
 
     import datetime
 
@@ -299,7 +299,7 @@ def selftest() -> None:
     p = card_payload(C(), photo=True)
     assert p["cid"] == "1103700123456"
     assert p["gender"] == "หญิง"
-    assert p["province"] == "อุดรธานี"
+    assert p["province"] == "ขอนแก่น"
     assert p["photo"].startswith("data:image/jpeg;base64,")
     assert base64.b64decode(p["photo"].split(",")[1]) == C.photo
     assert "photo" not in card_payload(C(), photo=False)
@@ -321,14 +321,14 @@ def selftest() -> None:
 
     class _N:
         main_inscl, sub_inscl = "UCS", "อ"
-        main_hospital_name, sub_hospital_name = "รพ.กุมภวาปี", ""
+        main_hospital_name, sub_hospital_name = "รพ.ตัวอย่าง", ""
         paid_type, change_hospital_amount = "03", "0"
         issue_date = update_date = _dt.date(2020, 1, 1)
         expire_date = _dt.date(2030, 1, 1)
         is_expired = False
 
     n = nhso_payload(_N())
-    assert n["main_hospital"] == "รพ.กุมภวาปี"
+    assert n["main_hospital"] == "รพ.ตัวอย่าง"
     assert n["expire_date"] == "2030-01-01"   # ISO out, BE conversion already done
 
     fake_card = lambda photo, laser=False, nhso=False: {
@@ -375,7 +375,7 @@ async def _socket_checks() -> None:
     global _read_card, _reader_status
     _read_card = lambda photo, laser=False, nhso=False: {"cid": "1103700123456", "photo": photo}
     _reader_status = lambda: [{"index": 0, "name": "FakeReader", "card": True}]
-    good = "https://grist.saa-coop.org"
+    good = "https://cards.example.test"
 
     async with ws_serve(handler, "127.0.0.1", 0, origins=[good],
                         process_request=http_or_ws) as server:
